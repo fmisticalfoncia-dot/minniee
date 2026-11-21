@@ -1,0 +1,13 @@
+/* Reveal is progressive enhancement: unobserved content is always visible. */
+@media (prefers-reduced-motion: no-preference) {
+  .about-section [data-reveal] {
+    transition:
+      opacity 800ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .about-section [data-reveal-pending] {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
