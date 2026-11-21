@@ -1,0 +1,22 @@
+@media (prefers-reduced-motion: no-preference) {
+  .gallery-section [data-reveal] {
+    transition:
+      opacity 800ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .gallery-section [data-reveal-pending] {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  .gallery-image-loaded {
+    animation: gallery-image-appear 450ms ease-out both;
+  }
+  @keyframes gallery-image-appear {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
