@@ -3,7 +3,6 @@ import { HeroSection } from "@/components/hero/hero-section";
 import { AboutSection } from "@/components/about/about-section";
 import { FounderSection } from "@/components/founder/founder-section";
 import { ServicesSection } from "@/components/services/services-section";
-import { FeaturedGallerySection } from "@/components/gallery/featured-gallery-section";
 
 export default function HomePage() {
   return (
@@ -23,7 +22,6 @@ export default function HomePage() {
       <AboutSection />
       <FounderSection />
       <ServicesSection />
-      <FeaturedGallerySection />
     </main>
   );
 }

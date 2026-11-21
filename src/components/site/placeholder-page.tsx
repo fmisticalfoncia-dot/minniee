@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
@@ -13,10 +14,12 @@ export function PlaceholderPage({
   eyebrow,
   title,
   description,
+  children,
 }: {
   eyebrow: string;
   title: string;
   description: string;
+  children?: ReactNode;
 }) {
   return (
     <main id="main" className="flex min-h-dvh flex-col">
@@ -57,6 +60,8 @@ export function PlaceholderPage({
           </div>
         </div>
       </section>
+
+      {children}
 
       <footer className="border-t border-espresso/10">
         <div className="mx-auto flex max-w-[100rem] items-center justify-between px-5 py-5 sm:px-8 lg:px-12">
