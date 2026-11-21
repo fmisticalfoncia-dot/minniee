@@ -1,17 +1,39 @@
 import { ALL_IMAGES, type EditorialImage } from "@/lib/images";
 
 /**
- * Add each verified, image-specific creative direction here after reviewing
- * the original. Null means review is required; details are never guessed.
- * The shared identity instructions are added by formatVerifiedPrompt.
+ * Store complete, verified prompts here after reviewing each original. Null
+ * means review is required; details are never guessed. User-supplied prompts
+ * stay verbatim. formatVerifiedPrompt can help compose future reviewed prompts.
  */
 export const VERIFIED_PROMPTS: Record<EditorialImage["id"], string | null> = {
-  "image-01": [
-    "Create a polished, full-length fashion editorial photograph in a vertical composition. Frame the subject seated centrally in a red upholstered armchair with slim black legs, viewed from the front at roughly seated eye level. Keep the entire seated figure, crossed legs and red pointed high heels in the frame. The subject sits confidently with one hand resting on the chair arm and the other holding a red telephone receiver to their ear, looking toward the camera with a composed expression.",
-    "Style the subject in a glossy black leather biker jacket over a fitted black outfit, sheer black tights with small polka dots, and glossy red pointed-toe stiletto heels. Add red cat-eye sunglasses, dangling silver-toned earrings, rings and a silver-toned wristwatch. Style the hair in long, dark, voluminous curls, while preserving the customer's recognizable facial identity and skin tone.",
-    "Place a red rotary telephone on a simple black side table to one side of the chair, with its coiled cord connecting to the receiver. Use a minimal warm off-white wall and pale floor as the setting. Strong directional light casts distinct geometric window-frame shadows across the wall and floor, with natural shadow and highlight transitions on the subject.",
-    "Use a restrained black, red and warm ivory palette. Aim for a poised, confident, retro-inspired luxury fashion mood, with realistic photographic detail in the leather, tights, upholstery, jewelry and telephone. Maintain natural proportions and a crisp, refined editorial finish.",
-  ].join("\n\n"),
+  "image-01": `Create a luxurious, photorealistic fashion editorial photoshoot using the customer's uploaded reference photograph as the identity reference.
+
+IDENTITY PRESERVATION:
+Preserve the customer's exact facial identity, facial structure, skin tone and recognizable features. Do not copy the identity of the woman in the inspiration image. Apply the following styling and creative direction to the customer's own identity.
+
+SCENE AND COMPOSITION:
+A sophisticated woman seated confidently in a luxurious deep-red velvet accent chair in a minimalist photography studio. She is sitting with one leg elegantly crossed over the other, holding a vintage bright-red corded telephone receiver against her ear. The matching red rotary telephone rests on a small black side table beside her.
+
+FASHION AND STYLING:
+She wears a fitted black top underneath an oversized black leather biker jacket with glossy leather texture and silver hardware. Pair the outfit with sheer black polka-dot tights and elegant pointed-toe glossy red stiletto heels. Add refined statement jewellery, including earrings, rings and a metallic wristwatch.
+
+HAIR AND BEAUTY:
+Voluminous, long, naturally textured black curls framing the face. Sophisticated makeup with defined eyes, luminous skin and glossy deep-toned lips. Red cat-eye sunglasses complete the fashion-forward look.
+
+POSE AND EXPRESSION:
+Relaxed yet powerful editorial posture. One hand holds the telephone receiver while the other rests naturally on the chair arm. Legs crossed elegantly. Calm, confident facial expression.
+
+LIGHTING AND ENVIRONMENT:
+Bright, warm natural studio lighting entering from the side, creating dramatic geometric window shadows across a soft warm ivory wall and pale floor. Minimalist studio environment with no unnecessary decorations.
+
+PHOTOGRAPHY DIRECTION:
+Luxury fashion magazine editorial, full-body portrait, slightly low camera perspective, carefully balanced composition, realistic skin texture, detailed leather materials, rich velvet texture, crisp fabric details and professional high-end fashion photography.
+
+COLOUR PALETTE:
+Deep red, glossy black, warm ivory and subtle silver accents.
+
+FINAL RESULT:
+A sophisticated, cinematic luxury fashion campaign photograph. Maintain realistic anatomy, natural proportions, accurate hands, detailed textures and professional photographic quality. Vertical portrait composition, high resolution.`,
   "image-02": null,
   "image-03": null,
   "image-04": null,
@@ -36,7 +58,7 @@ export const GALLERY_IMAGES = ALL_IMAGES.map((image) => ({
   title: image.caption,
   // Use the existing archive classification, not a guess at the prompt.
   category: image.caption.split(" — ")[1] ?? "Unclassified",
-  prompt: formatVerifiedPrompt(VERIFIED_PROMPTS[image.id]),
+  prompt: VERIFIED_PROMPTS[image.id],
 }));
 
 export type GalleryImage = (typeof GALLERY_IMAGES)[number];
