@@ -56,12 +56,16 @@ function ImageDetails({ image }: { image: GalleryImage }) {
   const [promptStatus, setPromptStatus] = React.useState("");
   const [codeStatus, setCodeStatus] = React.useState("");
 
-  async function copyText(text: string, setStatus: (message: string) => void) {
+  async function copyText(
+    text: string,
+    setStatus: (message: string) => void,
+    successMessage: string,
+  ) {
     try {
       if (!navigator.clipboard?.writeText)
         throw new Error("Clipboard unavailable");
       await navigator.clipboard.writeText(text);
-      setStatus("Copied to clipboard.");
+      setStatus(successMessage);
     } catch {
       setStatus("Could not copy. Please select and copy the text manually.");
     }
@@ -90,17 +94,18 @@ function ImageDetails({ image }: { image: GalleryImage }) {
           </h4>
           <p className="mt-4 whitespace-pre-wrap text-sm leading-[1.8] text-muted-foreground">
             {image.prompt ||
-              "The original prompt has not yet been provided. It will be added after the image details are reviewed."}
+              "Review required: this photograph must be visually inspected before its image-generation prompt can be prepared."}
           </p>
           <button
             type="button"
             className={`${buttonClass} mt-5`}
             disabled={!image.prompt}
             onClick={() =>
-              image.prompt && copyText(image.prompt, setPromptStatus)
+              image.prompt &&
+              copyText(image.prompt, setPromptStatus, "Prompt copied successfully.")
             }
           >
-            {promptStatus === "Copied to clipboard." ? (
+            {promptStatus === "Prompt copied successfully." ? (
               <Check aria-hidden size={14} />
             ) : (
               <Copy aria-hidden size={14} />
@@ -112,17 +117,17 @@ function ImageDetails({ image }: { image: GalleryImage }) {
             role="status"
           >
             {promptStatus ||
-              (!image.prompt ? "Copy available when the prompt is added." : "")}
+              (!image.prompt ? "Prompt copying is unavailable until review is complete." : "")}
           </p>
         </div>
 
         <div className="mt-6 border-t border-espresso/15 pt-6">
           <h4 className="eyebrow text-[0.625rem] leading-relaxed">
-            JavaScript Code
+            JavaScript Image-Display Code
           </h4>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Display the original image on a web page. This is not generation
-            code.
+            Display the original image on a web page. This code does not
+            generate images; image generation requires a connected service or API.
           </p>
           <pre className="mt-4 max-h-48 overflow-auto whitespace-pre-wrap break-all border border-espresso/10 bg-background p-4 text-xs leading-relaxed text-espresso/80">
             <code>{code}</code>
@@ -130,9 +135,9 @@ function ImageDetails({ image }: { image: GalleryImage }) {
           <button
             type="button"
             className={`${buttonClass} mt-5`}
-            onClick={() => copyText(code, setCodeStatus)}
+            onClick={() => copyText(code, setCodeStatus, "JavaScript code copied successfully.")}
           >
-            {codeStatus === "Copied to clipboard." ? (
+            {codeStatus === "JavaScript code copied successfully." ? (
               <Check aria-hidden size={14} />
             ) : (
               <Copy aria-hidden size={14} />
