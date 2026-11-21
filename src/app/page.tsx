@@ -1,6 +1,7 @@
 import { SiteHeader } from "@/components/site/site-header";
 import { HeroSection } from "@/components/hero/hero-section";
 import { AboutSection } from "@/components/about/about-section";
+import { FounderSection } from "@/components/founder/founder-section";
 
 export default function HomePage() {
   return (
@@ -18,6 +19,7 @@ export default function HomePage() {
       <SiteHeader />
       <HeroSection className="flex-1" />
       <AboutSection />
+      <FounderSection />
     </main>
   );
 }
