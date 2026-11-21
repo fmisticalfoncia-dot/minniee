@@ -79,7 +79,9 @@ export function SiteHeader() {
                       aria-hidden
                       className={cn(
                         "absolute -bottom-0.5 left-0 h-px w-full origin-left bg-champagne transition-transform duration-500 ease-out",
-                        active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100",
+                        active
+                          ? "scale-x-100"
+                          : "scale-x-0 group-hover:scale-x-100",
                       )}
                     />
                   </Link>
@@ -90,9 +92,12 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-          <UtilityActions className="hidden sm:flex" />
+          <UtilityActions className="hidden md:flex" />
 
-          <span aria-hidden className="mx-2 hidden h-5 w-px bg-espresso/12 sm:block" />
+          <span
+            aria-hidden
+            className="mx-2 hidden h-5 w-px bg-espresso/12 md:block"
+          />
 
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger
@@ -117,14 +122,19 @@ export function SiteHeader() {
                           ? pathname === "/"
                           : pathname.startsWith(item.href);
                       return (
-                        <li key={item.href} className="border-b border-espresso/8">
+                        <li
+                          key={item.href}
+                          className="border-b border-espresso/8"
+                        >
                           <Link
                             href={item.href}
                             aria-current={active ? "page" : undefined}
                             onClick={close}
                             className={cn(
                               "group flex items-baseline justify-between py-4 transition-colors duration-300",
-                              active ? "text-espresso" : "text-espresso/70 hover:text-espresso",
+                              active
+                                ? "text-espresso"
+                                : "text-espresso/70 hover:text-espresso",
                             )}
                           >
                             <span className="font-serif text-[1.6rem] font-light leading-none tracking-[0.01em]">

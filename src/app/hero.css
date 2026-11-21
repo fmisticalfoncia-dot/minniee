@@ -3,29 +3,6 @@
    All motion is applied to containers, never to the sourced images.
    ───────────────────────────────────────────────────────────────────────── */
 
-/* Collage: the middle frame rides higher, the right frame lower, so the
-   triptych reads as a hand-mounted editorial spread rather than a strip. */
-.hero-collage {
-  align-items: start;
-}
-
-.hero-collage > li:nth-child(2) {
-  margin-top: -2.2rem;
-}
-
-.hero-collage > li:nth-child(3) {
-  margin-top: 3.5rem;
-}
-
-@media (min-width: 1024px) {
-  .hero-collage > li:nth-child(2) {
-    margin-top: -3rem;
-  }
-  .hero-collage > li:nth-child(3) {
-    margin-top: 5rem;
-  }
-}
-
 /* ── 1. Entrance ──────────────────────────────────────────────────────── */
 
 .hero-reveal {
@@ -54,26 +31,14 @@
   will-change: transform;
 }
 
-/* ── 3. Float + sway ──────────────────────────────────────────────────── */
+/* ── 3. Float + sway ──────────────────────────────────────────────────────
+   The timelines themselves are generated per frame in hero-gallery.tsx (each
+   frame needs its own tilt and its own cycle). This file owns the container:
+   the compositor hint, and the still it settles to when motion is reduced. */
 
 .hero-float {
-  transform: rotate(var(--rot, 0deg));
-  animation: hero-float var(--float, 14s) ease-in-out infinite;
-  animation-delay: var(--phase, 0s);
   will-change: transform;
-}
-
-@keyframes hero-float {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) rotate(var(--rot, 0deg));
-  }
-  35% {
-    transform: translate3d(0, -10px, 0) rotate(calc(var(--rot, 0deg) + 0.7deg));
-  }
-  70% {
-    transform: translate3d(0, 5px, 0) rotate(calc(var(--rot, 0deg) - 0.5deg));
-  }
+  backface-visibility: hidden;
 }
 
 /* ── 4. Copy reveal (staggered, once) ─────────────────────────────────── */
@@ -92,7 +57,11 @@
   }
 }
 
-/* ── 5. Reduced motion & touch: keep the composition, drop the theatre ── */
+/* ── 5. Reduced motion & touch ────────────────────────────────────────────
+   No float animation is attached at all under reduced motion — the inline
+   stylesheet only declares it inside @media (prefers-reduced-motion:
+   no-preference) — so each frame holds the exact pose in its own base rule.
+   Here we only settle the entrance and the parallax. */
 
 @media (prefers-reduced-motion: reduce) {
   .hero-reveal,
@@ -102,54 +71,15 @@
     animation: none;
   }
 
-  .hero-float {
-    animation: none;
-    transform: rotate(var(--rot, 0deg));
-  }
-
   .hero-parallax {
-    transform: none;
-    transition: none;
-  }
-}
-
-@media (hover: none), (pointer: coarse) {
-  /* Lighter still on mobile: a long, shallow drift, nothing more. */
-  .hero-float {
-    animation-duration: calc(var(--float, 14s) * 1.6);
+    transform: none !important;
+    transition: none !important;
   }
 
-  @keyframes hero-float {
-    0%,
-    100% {
-      transform: translate3d(0, 0, 0) rotate(var(--rot, 0deg));
-    }
-    50% {
-      transform: translate3d(0, -5px, 0) rotate(var(--rot, 0deg));
-    }
-  }
-}
-
-/* Tablet and desktop: the middle frame rides higher and the right frame
-   lower, so the triptych reads as a mounted editorial spread. On phones the
-   three frames share one quiet baseline instead — no overlap with the copy. */
-@media (min-width: 640px) {
-  .hero-stage ol > li:nth-child(2) {
-    margin-top: -1.75rem;
-  }
-
-  .hero-stage ol > li:nth-child(3) {
-    margin-top: 2.25rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .hero-stage ol > li:nth-child(2) {
-    margin-top: -3rem;
-  }
-
-  .hero-stage ol > li:nth-child(3) {
-    margin-top: 4rem;
+  /* A hover-revealed caption would be unreachable without motion, so under
+     reduced motion it simply stays visible — the frame keeps its label. */
+  .hero-stage figcaption {
+    opacity: 1 !important;
   }
 }
 

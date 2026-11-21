@@ -11,19 +11,28 @@ import { HERO_IMAGES } from "@/lib/images";
  * Every image is shown exactly as supplied: plain <img> tags pointing at the
  * original files. Nothing is filtered, recoloured, regenerated or cropped
  * away — the frames only position the pixels. All motion lives on the
- * containers:
+ * containers, in nested layers with exactly one job each:
  *
- *   hero-reveal     · entrance, once
- *   hero-parallax   · pointer depth (desktop, fine pointers only)
- *   hero-float      · slow independent drift + a fraction of a degree of sway
+ *   hero-reveal   · entrance, once, staggered
+ *   hero-parallax · pointer depth (desktop fine pointers, reset on leave)
+ *   hero-float    · independent drift + alternating sway, per frame
+ *   figure        · the frame: static tilt, shadow, ring, caption
  *
- * With `prefers-reduced-motion`, or on a coarse pointer, the movement is
- * reduced to a static, fully legible composition.
+ * The three floats run on three different cycles (11s, 14s, 9s) from three
+ * different phases, so they never fall into step. Each frame's resting
+ * offset is a percentage of its own height, so the composition keeps its
+ * proportions at every viewport instead of collapsing when the frames
+ * narrow; the float then moves each frame from that pose by a few pixels.
+ *
+ * With `prefers-reduced-motion` nothing animates at all and every frame sits
+ * exactly on its resting pose, so none is ever caught mid-gesture.
  */
 
 type Placement = {
-  /** Static tilt of the frame, in degrees. */
+  /** Mean tilt of the frame, in degrees. */
   rotate: number;
+  /** How far the tilt alternates either side of the mean, in degrees. */
+  sway: number;
   /** Parallax strength in px at full pointer deflection. */
   depth: number;
   /** Entrance delay, in ms. */
@@ -32,45 +41,94 @@ type Placement = {
   float: number;
   /** Float phase offset, in seconds. */
   phase: number;
-  /** Grid placement per breakpoint. */
+  /** Vertical drive, as a percentage of the frame's own height. */
+  dy: number;
+  /** Vertical travel at the extremes of the float, in px. */
+  lift: number;
+  /** Grid placement — the three frames share one row, never a text overlap. */
   cell: string;
   /** Aspect ratio of the frame. */
   frame: string;
 };
 
+/**
+ * The hand-mounted spread: centre frame raised, right frame dropped, each
+ * tilted the other way. Expressed as a percentage of the frame's own height,
+ * so a phone keeps a hint of the arrangement without any overlap.
+ */
 const PLACEMENTS: Placement[] = [
   {
     rotate: -3.4,
-    depth: 14,
+    sway: 1.1,
+    depth: 12,
     delay: 140,
-    float: 13,
-    phase: -2,
-    cell: "col-start-1 row-start-1 sm:col-start-2 sm:row-start-1 sm:self-start lg:col-start-1 lg:row-start-1",
+    float: 11,
+    phase: 0,
+    dy: 0,
+    lift: 6,
+    cell: "col-start-1 row-start-1",
     frame: "aspect-[4/5]",
   },
   {
     rotate: 2.2,
-    depth: 26,
-    delay: 260,
-    float: 16,
-    phase: -7,
-    cell: "col-start-2 row-start-1 self-end sm:col-start-3 sm:row-start-2 sm:self-start lg:col-start-2 lg:row-start-1",
+    sway: 1.35,
+    depth: 22,
+    delay: 280,
+    float: 14,
+    phase: -5.5,
+    dy: -3.5,
+    lift: 10,
+    cell: "col-start-2 row-start-1",
     frame: "aspect-[4/5]",
   },
   {
     rotate: -5.2,
-    depth: 36,
-    delay: 400,
-    float: 11,
-    phase: -4,
-    cell: "col-start-3 row-start-2 self-start sm:col-start-1 sm:row-start-2 sm:self-end lg:col-start-3 lg:row-start-2",
+    sway: 1.6,
+    depth: 32,
+    delay: 420,
+    float: 9,
+    phase: -3,
+    dy: 3.5,
+    lift: 8,
+    cell: "col-start-3 row-start-1",
     frame: "aspect-[3/4]",
   },
 ];
 
+/**
+ * Two transforms, deliberately kept apart so the layers compose instead of
+ * fighting: the frame owns the fixed pose (the hand-mounted spread), and the
+ * float owns only the *delta* it moves from that pose by. Transforms multiply,
+ * so nothing is counted twice and the reduced-motion still is just the pose.
+ */
+const n = (v: number) => +v.toFixed(3);
+
+/** The frame's fixed pose — the spread, before any motion. */
+function stillTransform(p: Placement) {
+  return `translate3d(0,${n(p.dy)}%,0) rotate(${n(p.rotate)}deg)`;
+}
+
+/**
+ * A frame's float: position swaps above and below the baseline while the tilt
+ * alternates either side of it, so the motion reads as a drift rather than a
+ * slide. Starts and ends at zero, so the cycle closes without a jump.
+ */
+function floatKeyframes(name: string, p: Placement, touch: boolean) {
+  const lift = touch ? p.lift * 0.6 : p.lift;
+  const sway = touch ? p.sway * 0.7 : p.sway;
+  return (
+    `@keyframes ${name}{` +
+    `0%,100%{transform:translate3d(0,0,0) rotate(0deg)}` +
+    `28%{transform:translate3d(0,${n(-lift)}px,0) rotate(${n(sway)}deg)}` +
+    `55%{transform:translate3d(0,${n(lift * 0.35)}px,0) rotate(0deg)}` +
+    `78%{transform:translate3d(0,${n(-lift * 0.3)}px,0) rotate(${n(-sway)}deg)}}`
+  );
+}
+
 export function HeroGallery({ className }: { className?: string }) {
   const stage = React.useRef<HTMLDivElement>(null);
-  const frame = React.useRef<number | null>(null);
+  // Stable across renders, unique per instance: safe with SSR.
+  const uid = React.useId().replace(/[^a-zA-Z0-9]/g, "");
 
   const setVars = React.useCallback((x: number, y: number) => {
     const el = stage.current;
@@ -85,12 +143,13 @@ export function HeroGallery({ className }: { className?: string }) {
 
     const fine = window.matchMedia("(hover: hover) and (pointer: fine)");
     const calm = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (!fine.matches || calm.matches) return;
-
+    // Check preferences on every move so changes take effect without a reload.
+    let raf: number | null = null;
     const onMove = (event: PointerEvent) => {
-      if (frame.current !== null) return;
-      frame.current = window.requestAnimationFrame(() => {
-        frame.current = null;
+      if (!fine.matches || calm.matches || raf !== null) return;
+      raf = window.requestAnimationFrame(() => {
+        raf = null;
+        if (!fine.matches || calm.matches) return;
         const rect = el.getBoundingClientRect();
         if (!rect.width || !rect.height) return;
         const x = (event.clientX - rect.left) / rect.width - 0.5;
@@ -102,22 +161,53 @@ export function HeroGallery({ className }: { className?: string }) {
       });
     };
 
-    const onLeave = () => setVars(0, 0);
+    const onLeave = () => {
+      if (raf !== null) {
+        window.cancelAnimationFrame(raf);
+        raf = null;
+      }
+      setVars(0, 0);
+    };
     const onChange = () => {
-      if (calm.matches) onLeave();
+      if (!fine.matches || calm.matches) onLeave();
     };
 
     el.addEventListener("pointermove", onMove, { passive: true });
     el.addEventListener("pointerleave", onLeave, { passive: true });
     calm.addEventListener("change", onChange);
+    fine.addEventListener("change", onChange);
 
     return () => {
       el.removeEventListener("pointermove", onMove);
       el.removeEventListener("pointerleave", onLeave);
       calm.removeEventListener("change", onChange);
-      if (frame.current !== null) window.cancelAnimationFrame(frame.current);
+      fine.removeEventListener("change", onChange);
+      if (raf !== null) window.cancelAnimationFrame(raf);
     };
   }, [setVars]);
+
+  /* Each frame gets its own timeline. Two variants per frame — a desktop
+     float and a shallower touch float under its own name — because
+     re-declaring the same keyframes inside a media query is unevenly
+     supported. The still is emitted outside any motion query. */
+  const motionCss = PLACEMENTS.map((p, i) => {
+    const desk = `hero-float-${uid}-${i}`;
+    const touch = `hero-touch-${uid}-${i}`;
+    const frameClass = `hero-frame-${uid}-${i}`;
+    return (
+      `${floatKeyframes(desk, p, false)}` +
+      `${floatKeyframes(touch, p, true)}` +
+      `.${frameClass}{transform:${stillTransform(p)}}` +
+      `@media (prefers-reduced-motion:no-preference){` +
+      `.hero-float-${uid}-${i}{animation:${desk} ${p.float}s cubic-bezier(0.45,0.05,0.55,0.95) ${p.phase}s infinite}` +
+      `}` +
+      `@media (prefers-reduced-motion:no-preference) and (hover:none){` +
+      `.hero-float-${uid}-${i}{animation-name:${touch};animation-duration:${(
+        p.float * 1.5
+      ).toFixed(2)}s}` +
+      `}`
+    );
+  }).join("");
 
   return (
     <div
@@ -126,86 +216,86 @@ export function HeroGallery({ className }: { className?: string }) {
       role="group"
       aria-label="Selected work from the Maison Mistyy archive"
     >
-      {/* Hairline plinth and frame index — the only ornament in the collage. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-3 bottom-1 top-8 -z-10 border border-espresso/10 sm:inset-x-6"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-1 top-2 -z-10 hidden select-none font-serif text-[7rem] font-light leading-none text-espresso/[0.045] sm:block"
-      >
-        001
-      </div>
+      <style>{motionCss}</style>
 
-      <ol className="grid grid-cols-3 items-start gap-3 sm:gap-5 lg:gap-3">
-        {HERO_IMAGES.map((image, index) => {
-          const p = PLACEMENTS[index];
-          const z = ["z-10", "z-20", "z-30"][index] ?? "z-10";
-          return (
-            <li
-              key={image.id}
-              className={cn("relative", p.cell, z)}
-              style={
-                {
-                  "--rot": `${p.rotate}deg`,
-                  "--depth": p.depth,
-                  "--delay": `${p.delay}ms`,
-                  "--float": `${p.float}s`,
-                  "--phase": `${p.phase}s`,
-                } as React.CSSProperties
-              }
-            >
-              <div className="hero-reveal">
-                <div className="hero-parallax">
-                  <div className="hero-float">
-                    <figure
-                      className={cn(
-                        "group relative overflow-hidden bg-beige shadow-[0_18px_60px_-30px_rgba(53,37,31,0.55)] ring-1 ring-espresso/10 transition-shadow duration-700 hover:shadow-[0_30px_80px_-32px_rgba(53,37,31,0.6)]",
-                        p.frame,
-                      )}
+      {/* The frames sit on a hairline plinth, and the plinth stops with them:
+          the caption row below is outside its box, so no rule ever crosses a
+          word and nothing is left half-hidden. */}
+      <div className="relative">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-x-2.5 -bottom-3.5 -top-5 -z-10 border border-espresso/10 sm:-inset-x-4 sm:-bottom-4 sm:-top-6"
+        />
+
+        <ol className="grid grid-cols-3 items-start gap-2.5 sm:gap-4 lg:gap-3">
+          {HERO_IMAGES.map((image, index) => {
+            const p = PLACEMENTS[index];
+            const z = ["z-10", "z-20", "z-30"][index] ?? "z-10";
+            return (
+              <li
+                key={image.id}
+                className={cn("relative", p.cell, z)}
+                style={
+                  {
+                    "--depth": p.depth,
+                    "--delay": `${p.delay}ms`,
+                  } as React.CSSProperties
+                }
+              >
+                <div className="hero-reveal">
+                  <div className="hero-parallax">
+                    <div
+                      className={cn("hero-float", `hero-float-${uid}-${index}`)}
                     >
-                      {/* The original file, untouched: no filters, no crops.
+                      <figure
+                        className={cn(
+                          `hero-frame-${uid}-${index}`,
+                          "group relative overflow-hidden bg-beige shadow-[0_18px_60px_-30px_rgba(53,37,31,0.55)] ring-1 ring-espresso/10 transition-shadow duration-700 hover:shadow-[0_30px_80px_-32px_rgba(53,37,31,0.6)]",
+                          p.frame,
+                        )}
+                      >
+                        {/* The original file, untouched: no filters, no crops.
                           A plain <img> is deliberate — next/image would
                           re-encode the pixels, and these are final assets. */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={image.src}
-                        alt={image.alt}
-                        width={1024}
-                        height={1280}
-                        loading={index === 0 ? "eager" : "lazy"}
-                        fetchPriority={index === 0 ? "high" : "auto"}
-                        decoding="async"
-                        draggable={false}
-                        className="absolute inset-0 size-full select-none object-cover object-center"
-                      />
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={image.src}
+                          alt={image.alt}
+                          width={1024}
+                          height={1280}
+                          loading={index === 0 ? "eager" : "lazy"}
+                          fetchPriority={index === 0 ? "high" : "auto"}
+                          decoding="async"
+                          draggable={false}
+                          className="absolute inset-0 size-full select-none object-contain object-center"
+                        />
 
-                      {/* Caption plate: an interface layer over the frame. */}
-                      <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-espresso/60 via-espresso/10 to-transparent p-2.5 opacity-0 transition-opacity duration-500 group-hover:opacity-100 lg:p-3">
-                        <span className="eyebrow text-[0.4375rem] text-ivory lg:text-[0.5rem]">
-                          {image.caption}
-                        </span>
-                        <span className="eyebrow text-[0.4375rem] text-ivory/70 lg:text-[0.5rem]">
-                          {image.id.replace("image-", "")}
-                        </span>
-                      </figcaption>
-                    </figure>
+                        {/* Caption plate: an interface layer over the frame. */}
+                        <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-espresso/60 via-espresso/10 to-transparent p-2.5 opacity-0 transition-opacity duration-500 group-hover:opacity-100 lg:p-3">
+                          <span className="eyebrow text-[0.4375rem] text-ivory lg:text-[0.5rem]">
+                            {image.caption}
+                          </span>
+                          <span className="eyebrow text-[0.4375rem] text-ivory/70 lg:text-[0.5rem]">
+                            {image.id.replace("image-", "")}
+                          </span>
+                        </figcaption>
+                      </figure>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* A champagne corner tick, echoing a mounted print. */}
-              <span
-                aria-hidden
-                className="pointer-events-none absolute -bottom-1.5 -left-1.5 size-4 border-b border-l border-champagne/70 sm:-bottom-2 sm:-left-2 sm:size-5"
-              />
-            </li>
-          );
-        })}
-      </ol>
+                {/* A champagne corner tick, echoing a mounted print. */}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute -bottom-1.5 -left-1.5 size-4 border-b border-l border-champagne/70 sm:-bottom-2 sm:-left-2 sm:size-5"
+                />
+              </li>
+            );
+          })}
+        </ol>
+      </div>
 
-      <div className="mt-7 flex items-end justify-between gap-4 sm:mt-9">
+      <div className="mt-11 flex items-end justify-between gap-4 sm:mt-12">
         <p className="eyebrow text-[0.5rem] text-muted-foreground">
           Archive · MMXXVI
         </p>
