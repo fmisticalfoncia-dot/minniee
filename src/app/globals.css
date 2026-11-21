@@ -1,0 +1,185 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/cormorant-garamond/wght.css";
+@import "@fontsource-variable/cormorant-garamond/wght-italic.css";
+@import "@fontsource-variable/jost/wght.css";
+@import "./hero.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MAISON MISTYY — design tokens
+   Warm ivory, espresso, champagne gold, soft beige.
+   Tokens follow the shadcn naming convention so future sections and
+   shadcn primitives inherit the house palette automatically.
+   ───────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --ivory: #f8f5ef;
+  --espresso: #35251f;
+  --champagne: #c5a46d;
+  --beige: #e8dfd2;
+
+  --background: var(--ivory);
+  --foreground: var(--espresso);
+
+  --card: #fbf9f5;
+  --card-foreground: var(--espresso);
+  --popover: #fbf9f5;
+  --popover-foreground: var(--espresso);
+
+  --primary: var(--espresso);
+  --primary-foreground: var(--ivory);
+  --secondary: var(--beige);
+  --secondary-foreground: var(--espresso);
+
+  --muted: var(--beige);
+  --muted-foreground: #6e6259;
+  --accent: var(--champagne);
+  --accent-foreground: var(--espresso);
+
+  --destructive: #9c3b2e;
+  --destructive-foreground: var(--ivory);
+
+  --border: #ded3c3;
+  --input: #ded3c3;
+  --ring: var(--champagne);
+
+  --radius: 0.125rem;
+
+  /* House-specific helpers used by the hero and navigation. */
+  --rule: color-mix(in srgb, var(--espresso) 14%, transparent);
+  --chart-1: var(--champagne);
+  --chart-2: var(--espresso);
+  --chart-3: var(--beige);
+  --chart-4: #8b7355;
+  --chart-5: #d8c6a5;
+  --sidebar: var(--ivory);
+  --sidebar-foreground: var(--espresso);
+  --sidebar-primary: var(--espresso);
+  --sidebar-primary-foreground: var(--ivory);
+  --sidebar-accent: var(--beige);
+  --sidebar-accent-foreground: var(--espresso);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-ivory: var(--ivory);
+  --color-espresso: var(--espresso);
+  --color-champagne: var(--champagne);
+  --color-beige: var(--beige);
+
+  --radius-sm: calc(var(--radius) - 1px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+
+  --font-serif: "Cormorant Garamond Variable", "Cormorant Garamond", Didot,
+    "Times New Roman", serif;
+  --font-sans: "Jost Variable", "Jost", ui-sans-serif, system-ui, sans-serif;
+
+  --tracking-house: 0.34em;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--champagne) 45%, transparent);
+    color: var(--espresso);
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--espresso);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+/* ── house utilities ───────────────────────────────────────────────────── */
+
+@utility eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: var(--tracking-house);
+  text-transform: uppercase;
+}
+
+@utility rule-hairline {
+  height: 1px;
+  background: var(--rule);
+}
+
+/* A very quiet paper grain, so large ivory fields do not read as flat fill. */
+@utility paper-grain {
+  position: relative;
+  isolation: isolate;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.5;
+    background-image: radial-gradient(
+        circle at 18% 12%,
+        color-mix(in srgb, var(--champagne) 10%, transparent),
+        transparent 42%
+      ),
+      radial-gradient(
+        circle at 82% 78%,
+        color-mix(in srgb, var(--beige) 55%, transparent),
+        transparent 48%
+      );
+  }
+}

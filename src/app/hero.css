@@ -1,0 +1,176 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   MAISON MISTYY — hero motion system
+   All motion is applied to containers, never to the sourced images.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Collage: the middle frame rides higher, the right frame lower, so the
+   triptych reads as a hand-mounted editorial spread rather than a strip. */
+.hero-collage {
+  align-items: start;
+}
+
+.hero-collage > li:nth-child(2) {
+  margin-top: -2.2rem;
+}
+
+.hero-collage > li:nth-child(3) {
+  margin-top: 3.5rem;
+}
+
+@media (min-width: 1024px) {
+  .hero-collage > li:nth-child(2) {
+    margin-top: -3rem;
+  }
+  .hero-collage > li:nth-child(3) {
+    margin-top: 5rem;
+  }
+}
+
+/* ── 1. Entrance ──────────────────────────────────────────────────────── */
+
+.hero-reveal {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0) scale(0.985);
+  animation: hero-reveal 1150ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--delay, 0ms);
+}
+
+@keyframes hero-reveal {
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+/* ── 2. Pointer parallax ──────────────────────────────────────────────── */
+
+.hero-parallax {
+  transform: translate3d(
+    calc(var(--mx, 0) * var(--depth, 0) * 1px),
+    calc(var(--my, 0) * var(--depth, 0) * 1px),
+    0
+  );
+  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+/* ── 3. Float + sway ──────────────────────────────────────────────────── */
+
+.hero-float {
+  transform: rotate(var(--rot, 0deg));
+  animation: hero-float var(--float, 14s) ease-in-out infinite;
+  animation-delay: var(--phase, 0s);
+  will-change: transform;
+}
+
+@keyframes hero-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(var(--rot, 0deg));
+  }
+  35% {
+    transform: translate3d(0, -10px, 0) rotate(calc(var(--rot, 0deg) + 0.7deg));
+  }
+  70% {
+    transform: translate3d(0, 5px, 0) rotate(calc(var(--rot, 0deg) - 0.5deg));
+  }
+}
+
+/* ── 4. Copy reveal (staggered, once) ─────────────────────────────────── */
+
+.hero-rise {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  animation: hero-rise 1100ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--delay, 0ms);
+}
+
+@keyframes hero-rise {
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* ── 5. Reduced motion & touch: keep the composition, drop the theatre ── */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-reveal,
+  .hero-rise {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .hero-float {
+    animation: none;
+    transform: rotate(var(--rot, 0deg));
+  }
+
+  .hero-parallax {
+    transform: none;
+    transition: none;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  /* Lighter still on mobile: a long, shallow drift, nothing more. */
+  .hero-float {
+    animation-duration: calc(var(--float, 14s) * 1.6);
+  }
+
+  @keyframes hero-float {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) rotate(var(--rot, 0deg));
+    }
+    50% {
+      transform: translate3d(0, -5px, 0) rotate(var(--rot, 0deg));
+    }
+  }
+}
+
+/* Tablet and desktop: the middle frame rides higher and the right frame
+   lower, so the triptych reads as a mounted editorial spread. On phones the
+   three frames share one quiet baseline instead — no overlap with the copy. */
+@media (min-width: 640px) {
+  .hero-stage ol > li:nth-child(2) {
+    margin-top: -1.75rem;
+  }
+
+  .hero-stage ol > li:nth-child(3) {
+    margin-top: 2.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-stage ol > li:nth-child(2) {
+    margin-top: -3rem;
+  }
+
+  .hero-stage ol > li:nth-child(3) {
+    margin-top: 4rem;
+  }
+}
+
+/* ── Cart count ──────────────────────────────────────────────────────────
+   A filled dot with a numeral, drawn as an interface badge rather than an
+   icon, so the cart reads as "one selection" at a glance. */
+.utility-count {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.3rem;
+  display: grid;
+  place-items: center;
+  min-width: 0.95rem;
+  height: 0.95rem;
+  padding: 0 0.2rem;
+  border-radius: 9999px;
+  background: var(--espresso);
+  color: var(--ivory);
+  font-size: 0.5rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
